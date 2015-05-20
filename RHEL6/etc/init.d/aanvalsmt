@@ -1,0 +1,83 @@
+#!/bin/bash
+#
+#aanvalsmt	Startup script for Aanval Sensor Management Tools 
+# chkconfig: - 86 14
+# description:	This script responsible for Starting/Stopping Both   \
+#				Aanval's Sensor Management Tools Daemons
+# processnames: Aanval SMT
+### BEGIN INIT INFO
+# Provides: sensor management tools 
+# Required-Start: $local_fs $remote_fs $network $named $syslog $time $httpd
+# Required-Stop: $local_fs $remote_fs $network $named $syslog $time $httpd
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: start and stop aanval SMTs (Sensor Management Tools)
+# Description: Aanval is a web front-end for snort.
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+. /etc/sysconfig/network
+
+### Check that networking is up.
+[ "${NETWORKING}" == "no" ] && exit 0
+
+[ -x /usr/sbin/snort ] || exit 1
+[ -r /etc/snort/snort.conf ] || exit 1
+
+### Default variables
+SYSCONFIG="/etc/sysconfig/aanvalsmt"
+
+### Read configuration
+[ -r "$SYSCONFIG" ] && . "$SYSCONFIG"
+
+
+do_start()
+{
+	echo "Starting Aanval SMTs - ${INTERFACES}"
+	for INT in $INTERFACES; do
+	    cd ${SMTBASEDIR}/smt-${INT}
+		perl idsSensor.pl -start
+	    if [ $? -eq 0 ]; then
+		echo "Aanval SMT-${INT} successfully started."
+		logger "Aanval SMT-${INT} Started!"
+		else
+			echo "Aanval SMT-${INT} failed to start!"
+		fi
+	done
+    return 0
+}
+
+do_stop()
+{
+	echo "Stopping Aanval SMTs - ${INTERFACES}"
+	for INT in $INTERFACES; do
+	cd ${SMTBASEDIR}/smt-${INT}
+                perl idsSensor.pl -stop
+    		if [ $? -eq 0 ]; then
+		echo "Aanval SMT-${INT} successfully stopped."
+		logger "Aanval SMT-${INT} Stopped!"
+	else
+		echo "Aanval SMT-${INT} failed to stop! (Permissions? Already stopped?)"
+	fi
+	done
+    return 0
+}
+
+case "$1" in
+ start)
+    do_start
+    ;;
+ stop)
+    do_stop
+    ;;
+ restart)
+    do_stop
+    do_start
+    ;;
+ *)
+    echo "Usage: aanvalsmt {start|stop|restart}" >&2
+    exit 3
+    ;;
+esac
+exit 0

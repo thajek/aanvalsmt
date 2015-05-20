@@ -1,0 +1,3 @@
+SMTBASEDIR="/opt/tacticalflex"
+INTERFACES="em3"
+
